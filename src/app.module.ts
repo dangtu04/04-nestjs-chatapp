@@ -9,6 +9,7 @@ import { MailModule } from './mail/mail.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from '@/core/transform.interceptor';
 import { CloudinaryModule } from '@/modules/cloudinary/cloudinary.module';
+import { FriendModule } from './modules/friend/friend.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -27,6 +28,7 @@ import { CloudinaryModule } from '@/modules/cloudinary/cloudinary.module';
 
     AuthModule,
     MailModule,
+    FriendModule,
   ],
   controllers: [AppController],
 
