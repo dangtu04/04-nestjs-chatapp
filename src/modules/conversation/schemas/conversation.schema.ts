@@ -21,6 +21,8 @@ export class Participant {
 
 export const ParticipantSchema = SchemaFactory.createForClass(Participant);
 
+// ==========================================================================================
+
 @Schema({ _id: false })
 export class Group {
   @Prop({
@@ -37,6 +39,8 @@ export class Group {
 }
 
 export const GroupSchema = SchemaFactory.createForClass(Group);
+
+// ==========================================================================================
 
 @Schema({ _id: false })
 export class LastMessage {
@@ -60,6 +64,8 @@ export class LastMessage {
 }
 
 export const LastMessageSchema = SchemaFactory.createForClass(LastMessage);
+
+// ==========================================================================================
 
 @Schema({
   timestamps: true,
@@ -110,7 +116,7 @@ export class Conversation {
     of: Number,
     default: {},
   })
-  unreadCount: Map<string, number>;
+  unreadCounts: Map<string, number>;
 }
 
 export const ConversationSchema = SchemaFactory.createForClass(Conversation);

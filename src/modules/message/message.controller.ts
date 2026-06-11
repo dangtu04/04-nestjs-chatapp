@@ -1,42 +1,38 @@
 import {
   Controller,
-  Get,
   Post,
+  HttpCode,
+  HttpStatus,
   Body,
-  Patch,
-  Param,
-  Delete,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
+import { UserRole } from '@/enum/user.enum';
+import { FriendshipBodyKey, Roles } from '@/decorator/customize';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { UpdateMessageDto } from './dto/update-message.dto';
+import { FriendshipGuard } from './guard/friendship.guard';
 
 @Controller('message')
 export class MessageController {
   constructor(private readonly messageService: MessageService) {}
 
-  @Post()
-  create(@Body() createMessageDto: CreateMessageDto) {
-    return this.messageService.create(createMessageDto);
+  // gửi tin nhắn đơn
+  @HttpCode(HttpStatus.OK)
+  @Post('direct')
+  @UseGuards(FriendshipGuard)
+  @Roles(UserRole.ADMIN, UserRole.USER)
+  @FriendshipBodyKey('recipientId')
+  sendDirectMessage(@Body() dto: CreateMessageDto, @Req() req) {
+    const senderId = req.user._id;
+    return this.messageService.sendDirectMessage(dto, senderId);
   }
 
-  @Get()
-  findAll() {
-    return this.messageService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.messageService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMessageDto: UpdateMessageDto) {
-    return this.messageService.update(+id, updateMessageDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.messageService.remove(+id);
+  // gửi tin nhắn nhóm
+  @HttpCode(HttpStatus.OK)
+  @Post('group')
+  @Roles(UserRole.ADMIN, UserRole.USER)
+  sendGroupMessage() {
+    return this.messageService.sendGroupMessage();
   }
 }

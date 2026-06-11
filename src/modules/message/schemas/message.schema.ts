@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
+
+export type MessageDocument = HydratedDocument<Message>;
 
 @Schema({ timestamps: true })
 export class Message {
@@ -19,6 +21,8 @@ export class Message {
 
   @Prop({ type: String })
   imgUrl: string;
+
+  createdAt: Date;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

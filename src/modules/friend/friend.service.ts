@@ -19,8 +19,6 @@ export class FriendService {
     private friendRequestModel: Model<FriendRequest>,
     @InjectModel(User.name) private userModel: Model<User>,
   ) {}
-  // 6a107555e44f6ec0759edff0
-  // 6a1f01ed521dd92eea12420c
   // gửi lời mời kết bạn
   async sendFriendRequest(dto: SendFriendRequestDto, senderId: string) {
     const { to, message } = dto;
@@ -74,8 +72,38 @@ export class FriendService {
   }
 
   // chấp nhận lời mời kết bạn
-  async acceptFriendRequest() {
+  async acceptFriendRequest(requestId: string, userId: string) {
+    const request = await this.friendRequestModel.findById(requestId);
+
+    // check tồn tại lời mời
+    if (!request) {
+      throw new NotFoundException('Không tìm thấy lời mời kết bạn.');
+    }
+
+    // check người chấp nhận lời mời
+    if (request.to.toString() !== userId) {
+      throw new BadRequestException('Bạn không có quyền chấp nhận lời mời.');
+    }
     try {
+      await this.friendModel.create({
+        userA: request.from,
+        userB: request.to,
+      });
+
+      await this.friendRequestModel.findByIdAndDelete(requestId);
+
+      const from = await this.userModel
+        .findById(request.from)
+        .select('_id name avatarUrl')
+        .lean();
+
+      return {
+        newFriend: {
+          _id: from?._id,
+          name: from?.name,
+          avatarUrl: from?.avatarUrl,
+        },
+      };
     } catch (error) {
       console.log('Error accepting friend request', error);
       throw new InternalServerErrorException('Lỗi hệ thống.');
@@ -83,8 +111,20 @@ export class FriendService {
   }
 
   // từ chối lời mời kết bạn
-  async declineFriendRequest() {
+  async declineFriendRequest(requestId: string, userId: string) {
+    const request = await this.friendRequestModel.findById(requestId);
+
+    // check tồn tại lời mời
+    if (!request) {
+      throw new NotFoundException('Không tìm thấy lời mời kết bạn.');
+    }
+
+    // check người từ chối lời mời
+    if (request.to.toString() !== userId) {
+      throw new BadRequestException('Bạn không có quyền từ chối lời mời.');
+    }
     try {
+      await this.friendRequestModel.findByIdAndDelete(requestId);
     } catch (error) {
       console.log('Error when rejecting friend request', error);
       throw new InternalServerErrorException('Lỗi hệ thống.');
@@ -92,8 +132,27 @@ export class FriendService {
   }
 
   // lấy danh sách bạn bè
-  async getAllFriends() {
+  async getAllFriends(userId: string) {
     try {
+      const friendships = await this.friendModel
+        .find({
+          $or: [{ userA: userId }, { userB: userId }],
+        })
+        .populate('userA', '_id name avartarUrl')
+        .populate('userB', '_id name avartarUrl')
+        .lean();
+
+      if (!friendships.length) {
+        return {
+          friends: [],
+        };
+      }
+      const friends = friendships.map((friend) =>
+        friend.userA._id.toString() === userId.toString()
+          ? friend.userB
+          : friend.userA,
+      );
+      return { friends };
     } catch (error) {
       console.log('Error retrieving friend list', error);
       throw new InternalServerErrorException('Lỗi hệ thống.');
@@ -101,8 +160,22 @@ export class FriendService {
   }
 
   // lấy danh sách lời mời kết bạn
-  async getFriendRequests() {
+  async getFriendRequests(userId: string) {
     try {
+      const populateFields = '_id name avatarUrl';
+      const [sent, received] = await Promise.all([
+        this.friendRequestModel
+          .find({ from: userId })
+          .populate('to', populateFields),
+        this.friendRequestModel
+          .find({ to: userId })
+          .populate('from', populateFields),
+      ]);
+
+      return {
+        sent,
+        received,
+      };
     } catch (error) {
       console.log('Error retrieving friend request list', error);
       throw new InternalServerErrorException('Lỗi hệ thống.');

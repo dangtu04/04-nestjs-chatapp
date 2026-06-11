@@ -50,7 +50,7 @@ export class User {
   @Prop({
     default: null,
   })
-  image?: string;
+  avatarUrl?: string;
 
   @Prop({
     type: String,

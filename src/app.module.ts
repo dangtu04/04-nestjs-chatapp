@@ -10,6 +10,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from '@/core/transform.interceptor';
 import { CloudinaryModule } from '@/modules/cloudinary/cloudinary.module';
 import { FriendModule } from './modules/friend/friend.module';
+import { MessageModule } from './modules/message/message.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,6 +30,7 @@ import { FriendModule } from './modules/friend/friend.module';
     AuthModule,
     MailModule,
     FriendModule,
+    MessageModule,
   ],
   controllers: [AppController],
 

@@ -8,6 +8,7 @@ import {
   FriendRequestSchema,
 } from './schemas/friend.request.schema';
 import { User, UserSchema } from '@/modules/users/schemas/user.schema';
+import { FriendshipGuard } from '../message/guard/friendship.guard';
 
 @Module({
   imports: [
@@ -18,6 +19,6 @@ import { User, UserSchema } from '@/modules/users/schemas/user.schema';
     ]),
   ],
   controllers: [FriendController],
-  providers: [FriendService],
+  providers: [FriendService, FriendshipGuard],
 })
 export class FriendModule {}
