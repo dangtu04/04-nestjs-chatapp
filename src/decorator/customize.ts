@@ -13,5 +13,15 @@ export const ROLES_KEY = 'roles';
 export const Roles = (...roles: UserRole[]) => SetMetadata(ROLES_KEY, roles);
 
 export const FRIENDSHIP_BODY_KEY = 'friendship_body_key';
-export const FriendshipBodyKey = (key: string) =>
-  SetMetadata(FRIENDSHIP_BODY_KEY, key);
+export interface FriendshipOptions {
+  bodyKey: string;
+  isArray?: boolean;
+}
+export const FriendshipBodyKey = (options: FriendshipOptions) => {
+  return SetMetadata(FRIENDSHIP_BODY_KEY, options);
+};
+
+export const MEMBERSHIP_KEY = 'membership_key';
+export const MembershipKey = (key: string) => {
+  return SetMetadata(MEMBERSHIP_KEY, key);
+};

@@ -1,9 +1,13 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { CreateMessageDto } from './dto/create-message.dto';
+import {
+  CreateGroupMessageDto,
+  CreateMessageDto,
+} from './dto/create-message.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   Conversation,
@@ -12,6 +16,7 @@ import {
 import { Model, Types } from 'mongoose';
 import { Message } from './schemas/message.schema';
 import { updateConversationAfterCreateMessage } from '@/helpers/message';
+import { ConversationType } from '@/enum/conversation.enum';
 
 @Injectable()
 export class MessageService {
@@ -29,9 +34,16 @@ export class MessageService {
     }
     let conversation: ConversationDocument;
     try {
+      if (conversationId) {
+        conversation = await this.conversationModel.findById(conversationId);
+
+        if (!conversation) {
+          throw new BadRequestException('Không tìm thấy cuộc trò chuyện.');
+        }
+      }
       if (!conversationId) {
         conversation = await this.conversationModel.create({
-          type: 'direct',
+          type: ConversationType.DIRECT,
           participants: [
             { userId: senderId, joinedAt: new Date() },
             { userId: recipientId, joinedAt: new Date() },
@@ -40,10 +52,9 @@ export class MessageService {
           unreadCounts: new Map(),
         });
       }
-
       const message = await this.messageModel.create({
         conversationId: conversation._id,
-        senderId,
+        senderId: new Types.ObjectId(senderId),
         content,
       });
 
@@ -57,14 +68,44 @@ export class MessageService {
       return message;
     } catch (error) {
       console.log('Error when sending direct messages', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Lỗi hệ thống.');
     }
   }
 
-  async sendGroupMessage() {
+  async sendGroupMessage(
+    dto: CreateGroupMessageDto,
+    senderId: string,
+    conversation: ConversationDocument,
+  ) {
+    const { content } = dto;
+
+    if (!content) {
+      throw new BadRequestException('Thiếu nội dung');
+    }
+
     try {
+      const message = await this.messageModel.create({
+        conversationId: conversation._id,
+        senderId: new Types.ObjectId(senderId),
+        content,
+      });
+
+      updateConversationAfterCreateMessage(
+        conversation,
+        message,
+        new Types.ObjectId(senderId),
+      );
+      await conversation.save();
+
+      return message;
     } catch (error) {
-      console.log('Error when sending group messages', error);
+      console.error('Error when sending group messages:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Lỗi hệ thống.');
     }
   }

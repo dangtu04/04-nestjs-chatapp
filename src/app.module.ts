@@ -5,12 +5,13 @@ import { UsersModule } from '@/modules/users/users.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from '@/auth/auth.module';
-import { MailModule } from './mail/mail.module';
+import { MailModule } from '@/mail/mail.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from '@/core/transform.interceptor';
 import { CloudinaryModule } from '@/modules/cloudinary/cloudinary.module';
-import { FriendModule } from './modules/friend/friend.module';
-import { MessageModule } from './modules/message/message.module';
+import { FriendModule } from '@/modules/friend/friend.module';
+import { MessageModule } from '@/modules/message/message.module';
+import { ConversationModule } from '@/modules/conversation/conversation.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,6 +32,7 @@ import { MessageModule } from './modules/message/message.module';
     MailModule,
     FriendModule,
     MessageModule,
+    ConversationModule,
   ],
   controllers: [AppController],
 

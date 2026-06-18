@@ -17,9 +17,6 @@ import { UserRole } from '@/enum/user.enum';
 export class FriendController {
   constructor(private readonly friendService: FriendService) {}
 
-  // user1: 6a1f00b0521dd92eea124209
-  // user2: 6a1f01ed521dd92eea12420c
-
   // gửi lời mời kết bạn
   @Post('request')
   @Roles(UserRole.ADMIN, UserRole.USER)

@@ -7,7 +7,7 @@ import {
 import { SendFriendRequestDto } from './dto/create-friend.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Friend } from './schemas/friend.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User } from '@/modules/users/schemas/user.schema';
 import { FriendRequest } from './schemas/friend.request.schema';
 
@@ -86,8 +86,8 @@ export class FriendService {
     }
     try {
       await this.friendModel.create({
-        userA: request.from,
-        userB: request.to,
+        userA: new Types.ObjectId(request.from),
+        userB: new Types.ObjectId(request.to),
       });
 
       await this.friendRequestModel.findByIdAndDelete(requestId);

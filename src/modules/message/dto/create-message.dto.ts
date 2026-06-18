@@ -13,3 +13,13 @@ export class CreateMessageDto {
   @IsMongoId()
   conversationId?: string;
 }
+
+export class CreateGroupMessageDto {
+  @IsNotEmpty()
+  @IsString()
+  content: string;
+
+  @IsOptional()
+  @IsMongoId()
+  conversationId: string;
+}

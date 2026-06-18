@@ -9,9 +9,13 @@ import {
 } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { UserRole } from '@/enum/user.enum';
-import { FriendshipBodyKey, Roles } from '@/decorator/customize';
-import { CreateMessageDto } from './dto/create-message.dto';
+import { FriendshipBodyKey, MembershipKey, Roles } from '@/decorator/customize';
+import {
+  CreateGroupMessageDto,
+  CreateMessageDto,
+} from './dto/create-message.dto';
 import { FriendshipGuard } from './guard/friendship.guard';
+import { MembershipGuard } from './guard/membership.guard';
 
 @Controller('message')
 export class MessageController {
@@ -22,7 +26,7 @@ export class MessageController {
   @Post('direct')
   @UseGuards(FriendshipGuard)
   @Roles(UserRole.ADMIN, UserRole.USER)
-  @FriendshipBodyKey('recipientId')
+  @FriendshipBodyKey({ bodyKey: 'recipientId' })
   sendDirectMessage(@Body() dto: CreateMessageDto, @Req() req) {
     const senderId = req.user._id;
     return this.messageService.sendDirectMessage(dto, senderId);
@@ -31,8 +35,12 @@ export class MessageController {
   // gửi tin nhắn nhóm
   @HttpCode(HttpStatus.OK)
   @Post('group')
+  @UseGuards(MembershipGuard)
   @Roles(UserRole.ADMIN, UserRole.USER)
-  sendGroupMessage() {
-    return this.messageService.sendGroupMessage();
+  @MembershipKey('conversationId')
+  sendGroupMessage(@Body() dto: CreateGroupMessageDto, @Req() req) {
+    const senderId = req.user._id;
+    const conversation = req.conversation;
+    return this.messageService.sendGroupMessage(dto, senderId, conversation);
   }
 }

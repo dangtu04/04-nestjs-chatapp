@@ -1,3 +1,4 @@
+import { ConversationType } from '@/enum/conversation.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -73,10 +74,10 @@ export const LastMessageSchema = SchemaFactory.createForClass(LastMessage);
 export class Conversation {
   @Prop({
     type: String,
-    enum: ['direct', 'group'],
+    enum: ConversationType,
     required: true,
   })
-  type: string;
+  type: ConversationType;
 
   @Prop({
     type: [ParticipantSchema],

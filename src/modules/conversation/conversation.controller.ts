@@ -1,45 +1,55 @@
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
-  Patch,
   Param,
-  Delete,
+  Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
-import { CreateConversationDto } from './dto/create-conversation.dto';
-import { UpdateConversationDto } from './dto/update-conversation.dto';
+import { FriendshipBodyKey, Roles } from '@/decorator/customize';
+import { UserRole } from '@/enum/user.enum';
+import {
+  CreateConversationDto,
+  GetMessageQueryDto,
+} from './dto/create-conversation.dto';
+import { FriendshipGuard } from '@/modules/message/guard/friendship.guard';
 
 @Controller('conversation')
 export class ConversationController {
   constructor(private readonly conversationService: ConversationService) {}
 
   @Post()
-  create(@Body() createConversationDto: CreateConversationDto) {
-    return this.conversationService.create(createConversationDto);
+  @UseGuards(FriendshipGuard)
+  @Roles(UserRole.ADMIN, UserRole.USER)
+  @FriendshipBodyKey({ bodyKey: 'memberIds', isArray: true })
+  createConversation(@Body() dto: CreateConversationDto, @Req() req) {
+    const userId = req.user._id;
+    return this.conversationService.createConversation(dto, userId);
   }
 
   @Get()
-  findAll() {
-    return this.conversationService.findAll();
+  @Roles(UserRole.ADMIN, UserRole.USER)
+  getConversation(@Req() req) {
+    const userId = req.user._id;
+    return this.conversationService.getConversation(userId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.conversationService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateConversationDto: UpdateConversationDto,
+  @Get(':conversationId/message')
+  @Roles(UserRole.ADMIN, UserRole.USER)
+  getMessage(
+    @Param('conversationId') conversationId: string,
+    @Query() query: GetMessageQueryDto,
+    @Req() req,
   ) {
-    return this.conversationService.update(+id, updateConversationDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.conversationService.remove(+id);
+    const reqSenderId = req.user._id;
+    return this.conversationService.getMessage(
+      conversationId,
+      query.limit,
+      query.cursor,
+      reqSenderId,
+    );
   }
 }
