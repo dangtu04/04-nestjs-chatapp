@@ -98,7 +98,9 @@ export class AuthService {
         'Refresh token không hợp lệ hoặc đã hết hạn',
       );
 
-    const user = await this.usersService.findOneById(userId.toString());
+    const user = await this.usersService.getUserForAccessToken(
+      userId.toString(),
+    );
 
     if (!user || !user.isActive)
       throw new UnauthorizedException('Tài khoản không hợp lệ');

@@ -12,6 +12,7 @@ import { CloudinaryModule } from '@/modules/cloudinary/cloudinary.module';
 import { FriendModule } from '@/modules/friend/friend.module';
 import { MessageModule } from '@/modules/message/message.module';
 import { ConversationModule } from '@/modules/conversation/conversation.module';
+import { SocketModule } from '@/socket/socket.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -33,6 +34,7 @@ import { ConversationModule } from '@/modules/conversation/conversation.module';
     FriendModule,
     MessageModule,
     ConversationModule,
+    SocketModule,
   ],
   controllers: [AppController],
 

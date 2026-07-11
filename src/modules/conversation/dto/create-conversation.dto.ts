@@ -44,11 +44,11 @@ export class GetMessageQueryDto {
   limit: number = 50;
 
   @IsOptional()
-  @IsISO8601(
-    {},
-    {
-      message: 'cursor phải là định dạng thời gian ISO.',
-    },
-  )
+  // @IsISO8601(
+  //   {},
+  //   {
+  //     message: 'cursor phải là định dạng thời gian ISO.',
+  //   },
+  // )
   cursor?: string;
 }

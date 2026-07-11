@@ -58,6 +58,12 @@ export class LastMessage {
   senderId: Types.ObjectId;
 
   @Prop({
+    type: String,
+    trim: true,
+  })
+  content?: string;
+
+  @Prop({
     type: Date,
     default: null,
   })

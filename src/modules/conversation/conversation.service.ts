@@ -83,7 +83,7 @@ export class ConversationService {
         conversation = await this.conversationModel.create({
           type: ConversationType.GROUP,
           participants: [
-            { userId },
+            { userId: new Types.ObjectId(userId) },
             ...uniqueMemberIds.map((id) => ({
               userId: new Types.ObjectId(id),
             })),
@@ -126,12 +126,12 @@ export class ConversationService {
     try {
       const conversations = await this.conversationModel
         .find({
-          'participants.userId': userId,
+          'participants.userId': new Types.ObjectId(userId),
         })
         .sort({ lastMessageAt: -1, updatedAt: -1 })
         .populate({ path: 'participants.userId', select: 'name avatarUrl' })
         .populate({ path: 'lastMessage.senderId', select: 'name avatarUrl' })
-        .populate({ path: 'seenBy.userId', select: 'name avatarUrl' });
+        .populate({ path: 'seenBy', select: 'name avatarUrl' });
 
       const formatted = conversations.map((convo) => {
         const participants = (convo.participants || []).map((p) => {
@@ -145,7 +145,7 @@ export class ConversationService {
         });
         return {
           ...convo.toObject(),
-          unreadCounts: convo.unreadCounts ?? {},
+          unreadCounts: convo.unreadCounts || {},
           participants,
         };
       });
@@ -172,8 +172,8 @@ export class ConversationService {
       }
 
       const conversation = await this.conversationModel.exists({
-        _id: conversationId,
-        'participants.userId': reqSenderId,
+        _id: new Types.ObjectId(conversationId),
+        'participants.userId': new Types.ObjectId(reqSenderId),
       });
       if (!conversation) {
         throw new BadRequestException(
@@ -213,6 +213,21 @@ export class ConversationService {
         throw error;
       }
       throw new InternalServerErrorException('Lỗi hệ thống.');
+    }
+  }
+
+  async getUserConversationForSocketIo(userId: string) {
+    try {
+      const conversations = await this.conversationModel.find(
+        {
+          'participants.userId': new Types.ObjectId(userId),
+        },
+        { _id: 1 },
+      );
+      return conversations.map((c) => c._id.toString());
+    } catch (error) {
+      console.error('Error when get conversation:', error);
+      return [];
     }
   }
 }

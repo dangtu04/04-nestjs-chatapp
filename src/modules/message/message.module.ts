@@ -11,6 +11,7 @@ import {
   MessageSchema,
 } from '@/modules/message/schemas/message.schema';
 import { Friend, FriendSchema } from '@/modules/friend/schemas/friend.schema';
+import { SocketModule } from '@/socket/socket.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { Friend, FriendSchema } from '@/modules/friend/schemas/friend.schema';
       { name: Message.name, schema: MessageSchema },
       { name: Friend.name, schema: FriendSchema },
     ]),
+    SocketModule,
   ],
   controllers: [MessageController],
   providers: [MessageService],

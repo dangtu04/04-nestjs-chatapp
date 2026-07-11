@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import { SocketAdapter } from './socket/socket.adapter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -36,6 +37,12 @@ async function bootstrap() {
     defaultVersion: '1',
   });
   app.use(cookieParser());
+
+  /**
+   * dăng ký custom socket.io adapter
+   */
+  app.useWebSocketAdapter(new SocketAdapter(app));
+
   await app.listen(port || 3000);
 }
 bootstrap();

@@ -87,7 +87,20 @@ export class UsersService {
     }
     const user = await this.userModel
       .findById(id)
-      .select('_id name email phone address role isActive');
+      .select('_id name email isActive avatarUrl');
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return user;
+  }
+
+  async getUserForAccessToken(id: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid user id');
+    }
+    const user = await this.userModel
+      .findById(id)
+      .select('_id name email isActive role');
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }

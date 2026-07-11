@@ -17,6 +17,7 @@ import { Model, Types } from 'mongoose';
 import { Message } from './schemas/message.schema';
 import { updateConversationAfterCreateMessage } from '@/helpers/message';
 import { ConversationType } from '@/enum/conversation.enum';
+import { SocketEventsService } from '@/socket/socket-events.service';
 
 @Injectable()
 export class MessageService {
@@ -25,6 +26,8 @@ export class MessageService {
     private conversationModel: Model<Conversation>,
     @InjectModel(Message.name)
     private messageModel: Model<Message>,
+
+    private readonly socketEventsService: SocketEventsService,
   ) {}
   async sendDirectMessage(dto: CreateMessageDto, senderId: string) {
     const { recipientId, content, conversationId } = dto;
@@ -45,8 +48,8 @@ export class MessageService {
         conversation = await this.conversationModel.create({
           type: ConversationType.DIRECT,
           participants: [
-            { userId: senderId, joinedAt: new Date() },
-            { userId: recipientId, joinedAt: new Date() },
+            { userId: new Types.ObjectId(senderId), joinedAt: new Date() },
+            { userId: new Types.ObjectId(recipientId), joinedAt: new Date() },
           ],
           lastMessageAt: new Date(),
           unreadCounts: new Map(),
@@ -64,6 +67,8 @@ export class MessageService {
         new Types.ObjectId(senderId),
       );
       await conversation.save();
+
+      this.socketEventsService.emitNewMessage(conversation, message);
 
       return message;
     } catch (error) {
@@ -99,6 +104,8 @@ export class MessageService {
         new Types.ObjectId(senderId),
       );
       await conversation.save();
+
+      this.socketEventsService.emitNewMessage(conversation, message);
 
       return message;
     } catch (error) {
