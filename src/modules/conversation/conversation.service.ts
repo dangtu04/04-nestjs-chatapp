@@ -10,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Conversation } from './schemas/conversation.schema';
 import { Model, Types } from 'mongoose';
 import { Message } from '@/modules/message/schemas/message.schema';
+import { SocketEventsService } from '@/socket/socket-events.service';
 
 @Injectable()
 export class ConversationService {
@@ -18,6 +19,8 @@ export class ConversationService {
     private conversationModel: Model<Conversation>,
     @InjectModel(Message.name)
     private messageModel: Model<Message>,
+
+    private readonly socketEventsService: SocketEventsService,
   ) {}
 
   async createConversation(dto: CreateConversationDto, userId: string) {
@@ -228,6 +231,56 @@ export class ConversationService {
     } catch (error) {
       console.error('Error when get conversation:', error);
       return [];
+    }
+  }
+  async markAsSeen(conversationId: string, userId: string) {
+    try {
+      if (!conversationId || !Types.ObjectId.isValid(conversationId)) {
+        throw new BadRequestException('Mã hội thoại không hợp lệ.');
+      }
+
+      const conversation = await this.conversationModel
+        .findById(new Types.ObjectId(conversationId))
+        .lean();
+
+      const last = conversation.lastMessage;
+      if (!last) {
+        return {
+          message: 'Không có tin nhắn',
+        };
+      }
+
+      if (last.senderId.toString() === userId.toString()) {
+        return { message: 'Người gửi không cần đánh dấu đã xem' };
+      }
+
+      const updated = await this.conversationModel.findByIdAndUpdate(
+        conversationId,
+        {
+          $addToSet: { seenBy: userId }, // thêm user vào mảng seenby
+          $set: { [`unreadCounts.${userId}`]: 0 }, // gán giá trị cho field
+        },
+        {
+          new: true,
+        },
+      );
+
+      this.socketEventsService.emitReadMessage(updated);
+
+      return {
+        seenBy: updated?.seenBy || [],
+        myUnreadCount: updated?.unreadCounts[userId] || 0,
+      };
+
+      // this.
+    } catch (error) {
+      console.error('Error marking as read: ', error);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Lỗi hệ thống.');
     }
   }
 }

@@ -3,13 +3,18 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
-import { FriendshipBodyKey, Roles } from '@/decorator/customize';
+import {
+  FriendshipBodyKey,
+  ResponseMessage,
+  Roles,
+} from '@/decorator/customize';
 import { UserRole } from '@/enum/user.enum';
 import {
   CreateConversationDto,
@@ -51,5 +56,13 @@ export class ConversationController {
       query.cursor,
       reqSenderId,
     );
+  }
+
+  @Patch(':conversationId/seen')
+  @Roles(UserRole.ADMIN, UserRole.USER)
+  @ResponseMessage('Marked as seen.')
+  markAsSeen(@Param('conversationId') conversationId: string, @Req() req) {
+    const userId = req.user._id;
+    return this.conversationService.markAsSeen(conversationId, userId);
   }
 }

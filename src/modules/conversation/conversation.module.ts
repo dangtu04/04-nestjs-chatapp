@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
 import { ConversationController } from './conversation.controller';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -11,6 +11,7 @@ import {
   Message,
   MessageSchema,
 } from '@/modules/message/schemas/message.schema';
+import { SocketModule } from '@/socket/socket.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import {
       { name: Friend.name, schema: FriendSchema },
       { name: Message.name, schema: MessageSchema },
     ]),
+    forwardRef(() => SocketModule),
   ],
   controllers: [ConversationController],
   providers: [ConversationService],

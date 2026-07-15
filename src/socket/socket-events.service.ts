@@ -25,4 +25,18 @@ export class SocketEventsService {
       unreadCounts: conversation.unreadCounts,
     });
   }
+
+  emitReadMessage(conversation: ConversationDocument) {
+    this.server.to(conversation._id.toString()).emit('read-message', {
+      conversation: conversation,
+      lastMessage: {
+        _id: conversation?.lastMessage._id,
+        content: conversation?.lastMessage.content,
+        createdAt: conversation?.lastMessage.createdAt,
+        sender: {
+          _id: conversation?.lastMessage.senderId,
+        },
+      },
+    });
+  }
 }
