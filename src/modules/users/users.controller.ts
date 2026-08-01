@@ -11,7 +11,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, SearchUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto, UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from '@/decorator/customize';
 import { UserRole } from '@/enum/user.enum';
@@ -68,5 +68,11 @@ export class UsersController {
   updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
     const userId = req.user._id;
     return this.usersService.updateProfile(userId, dto);
+  }
+
+  @Get('search/email')
+  @Roles(UserRole.ADMIN, UserRole.USER)
+  searchUserByEmail(@Query() dto: SearchUserDto) {
+    return this.usersService.searchUserByEmail(dto.email);
   }
 }

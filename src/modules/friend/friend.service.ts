@@ -36,14 +36,16 @@ export class FriendService {
       throw new NotFoundException('Người nhận không tồn tại');
     }
 
-    let userA = senderId.toString();
-    let userB = to.toString();
+    const userA = new Types.ObjectId(senderId);
+    const userB = new Types.ObjectId(to);
 
-    if (userA > userB) {
-      [userA, userB] = [userB, userA];
-    }
     const [alreadyFriends, existingRequest] = await Promise.all([
-      this.friendModel.findOne({ userA, userB }),
+      this.friendModel.findOne({
+        $or: [
+          { userA, userB },
+          { userA: userB, userB: userA },
+        ],
+      }),
       this.friendRequestModel.findOne({
         $or: [
           { from: senderId, to },
@@ -136,10 +138,13 @@ export class FriendService {
     try {
       const friendships = await this.friendModel
         .find({
-          $or: [{ userA: userId }, { userB: userId }],
+          $or: [
+            { userA: new Types.ObjectId(userId) },
+            { userB: new Types.ObjectId(userId) },
+          ],
         })
-        .populate('userA', '_id name avartarUrl')
-        .populate('userB', '_id name avartarUrl')
+        .populate('userA', '_id name avatarUrl')
+        .populate('userB', '_id name avatarUrl')
         .lean();
 
       if (!friendships.length) {

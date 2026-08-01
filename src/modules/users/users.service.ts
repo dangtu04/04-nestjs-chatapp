@@ -1,6 +1,8 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -34,6 +36,7 @@ export class UsersService {
       return false;
     }
   }
+
   async create(createUserDto: CreateUserDto) {
     const { name, email, password } = createUserDto;
     const isExist = await this.isEmailExist(email);
@@ -136,6 +139,7 @@ export class UsersService {
       message: 'Delete user successfully!',
     };
   }
+
   async findByEmail(email: string) {
     return await this.userModel.findOne({ email });
   }
@@ -219,6 +223,7 @@ export class UsersService {
 
     return { _id: user._id };
   }
+
   // xác thực tài khoản
   async handleVerifyAccount(verifyAccountDto: VerifyAccountDto) {
     // tìm user theo _id và codeId
@@ -244,6 +249,7 @@ export class UsersService {
       throw new BadRequestException('The code is invalid or expired.');
     }
   }
+
   async handleForgotPassword(email: string) {
     // console.log(">>> email from FE: ", email);
     // return
@@ -321,6 +327,7 @@ export class UsersService {
     }
     return updatedUser;
   }
+
   async findOrCreateGoogleUser(data: {
     email: string;
     googleId: string;
@@ -354,5 +361,21 @@ export class UsersService {
       name,
       accountType: AccountType.GOOGLE,
     });
+  }
+
+  async searchUserByEmail(email: string) {
+    try {
+      const user = await this.userModel
+        .findOne({ email })
+        .select('_id name avatarUrl');
+
+      return user;
+    } catch (error) {
+      console.log('Error when searchUserByEmail', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Lỗi hệ thống.');
+    }
   }
 }

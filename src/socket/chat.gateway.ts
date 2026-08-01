@@ -2,6 +2,7 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -31,6 +32,12 @@ export class ChatGateway
   afterInit(server: Server) {
     this.socketEventsService.setServer(server);
   }
+
+  @SubscribeMessage('join-conversation')
+  handleJoinConversation(client: SocketWithAuth, conversationId: string) {
+    client.join(conversationId);
+  }
+
   async handleConnection(client: SocketWithAuth) {
     // console.log('>>>>>>> Connected');
 
@@ -38,6 +45,8 @@ export class ChatGateway
     const conversationIds =
       await this.conversationService.getUserConversationForSocketIo(user._id);
     conversationIds.forEach((id) => client.join(id));
+
+    client.join(user._id.toString());
 
     this.onlineUsersService.addUserSocket(user._id, client.id);
     // console.log(this.onlineUsersService.getOnlineUserIds());

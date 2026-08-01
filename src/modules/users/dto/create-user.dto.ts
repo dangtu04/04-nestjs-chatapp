@@ -20,3 +20,9 @@ export class CreateUserDto {
   @IsOptional()
   role: string;
 }
+
+export class SearchUserDto {
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
+}

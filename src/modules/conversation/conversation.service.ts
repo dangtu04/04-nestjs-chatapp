@@ -25,7 +25,6 @@ export class ConversationService {
 
   async createConversation(dto: CreateConversationDto, userId: string) {
     const { type, name, memberIds } = dto;
-
     try {
       let conversation;
 
@@ -53,7 +52,10 @@ export class ConversationService {
             $size: 2,
           },
           'participants.userId': {
-            $all: [userId, participantId],
+            $all: [
+              new Types.ObjectId(userId),
+              new Types.ObjectId(participantId),
+            ],
           },
         });
 
@@ -61,7 +63,10 @@ export class ConversationService {
         if (!conversation) {
           conversation = await this.conversationModel.create({
             type: ConversationType.DIRECT,
-            participants: [{ userId }, { userId: participantId }],
+            participants: [
+              { userId: new Types.ObjectId(userId) },
+              { userId: new Types.ObjectId(participantId) },
+            ],
             lastMessageAt: null,
           });
         }
@@ -114,7 +119,43 @@ export class ConversationService {
         },
       ]);
 
-      return conversation;
+      const participants = (conversation.participants || []).map((p) => {
+        const user = p.userId as any;
+        return {
+          _id: user?._id,
+          name: user?.name,
+          avatarUrl: user?.avatarUrl ?? null,
+          joinedAt: p.joinedAt,
+        };
+      });
+
+      if (type === ConversationType.DIRECT) {
+        const memberIdsForJoin = [memberIds[0].toString(), userId.toString()];
+        const conversationId = conversation._id.toString();
+        this.socketEventsService.joinConversationMembers(
+          memberIdsForJoin,
+          conversationId,
+        );
+      }
+
+      const formatted = { ...conversation.toObject(), participants };
+
+      if (type === ConversationType.GROUP) {
+        const memberIdsForJoin = [
+          userId.toString(),
+          ...memberIds.map((id) => id.toString()),
+        ];
+        // gửi sự kiện cho tất cả thành viên trong nhóm
+        this.socketEventsService.emitNewGroup(formatted, memberIdsForJoin);
+
+        // thêm tất cả thành viên vào room của conversation
+        this.socketEventsService.joinConversationMembers(
+          memberIdsForJoin,
+          formatted._id.toString(),
+        );
+      }
+
+      return formatted;
     } catch (error) {
       console.error('Error when creating conversation:', error);
 

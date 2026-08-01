@@ -27,6 +27,12 @@ io.on('connection', async (socket) => {
     socket.join(id);
   });
 
+  socket.on('join-conversation', (conversationId) => {
+    socket.join(conversationId);
+  });
+
+  socket.join(user._id.toString()); // dòng này mới thêm
+
   socket.on('disconnect', () => {
     onlineUsers.delete(user._id);
     io.emit('online-user', Array.from(onlineUsers.keys()));
@@ -48,3 +54,9 @@ export const emitNewMessage = (io, conversation, message) => {
     unreadCounts: conversation.unreadCounts,
   });
 };
+
+
+// 
+memberIds.forEach((userId) => {
+  io.to(userId).emit("new-group", formatted)
+})

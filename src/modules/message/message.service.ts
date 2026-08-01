@@ -29,6 +29,57 @@ export class MessageService {
 
     private readonly socketEventsService: SocketEventsService,
   ) {}
+  // async sendDirectMessage(dto: CreateMessageDto, senderId: string) {
+  //   const { recipientId, content, conversationId } = dto;
+
+  //   if (!content) {
+  //     throw new BadRequestException('Thiếu nội dung');
+  //   }
+  //   let conversation: ConversationDocument;
+  //   try {
+  //     if (conversationId) {
+  //       conversation = await this.conversationModel.findById(conversationId);
+
+  //       if (!conversation) {
+  //         throw new BadRequestException('Không tìm thấy cuộc trò chuyện.');
+  //       }
+  //     }
+  //     if (!conversationId) {
+  //       conversation = await this.conversationModel.create({
+  //         type: ConversationType.DIRECT,
+  //         participants: [
+  //           { userId: new Types.ObjectId(senderId), joinedAt: new Date() },
+  //           { userId: new Types.ObjectId(recipientId), joinedAt: new Date() },
+  //         ],
+  //         lastMessageAt: new Date(),
+  //         unreadCounts: new Map(),
+  //       });
+  //     }
+  //     const message = await this.messageModel.create({
+  //       conversationId: conversation._id,
+  //       senderId: new Types.ObjectId(senderId),
+  //       content,
+  //     });
+
+  //     updateConversationAfterCreateMessage(
+  //       conversation,
+  //       message,
+  //       new Types.ObjectId(senderId),
+  //     );
+  //     await conversation.save();
+
+  //     this.socketEventsService.emitNewMessage(conversation, message);
+
+  //     return message;
+  //   } catch (error) {
+  //     console.log('Error when sending direct messages', error);
+  //     if (error instanceof HttpException) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException('Lỗi hệ thống.');
+  //   }
+  // }
+
   async sendDirectMessage(dto: CreateMessageDto, senderId: string) {
     const { recipientId, content, conversationId } = dto;
 
@@ -39,7 +90,6 @@ export class MessageService {
     try {
       if (conversationId) {
         conversation = await this.conversationModel.findById(conversationId);
-
         if (!conversation) {
           throw new BadRequestException('Không tìm thấy cuộc trò chuyện.');
         }
@@ -55,6 +105,10 @@ export class MessageService {
           unreadCounts: new Map(),
         });
       }
+
+      // check trước khi update lastMessage
+      const isFirstMessage = !conversation.lastMessage;
+
       const message = await this.messageModel.create({
         conversationId: conversation._id,
         senderId: new Types.ObjectId(senderId),
@@ -68,7 +122,21 @@ export class MessageService {
       );
       await conversation.save();
 
-      this.socketEventsService.emitNewMessage(conversation, message);
+      if (isFirstMessage) {
+        // populate để B có đủ tên/avatar hiển thị khi conversation này xuất hiện lần đầu
+        await conversation.populate({
+          path: 'participants.userId',
+          select: 'name avatarUrl',
+        });
+        this.socketEventsService.emitNewConversation(
+          conversation,
+          message,
+          recipientId,
+          senderId,
+        );
+      } else {
+        this.socketEventsService.emitNewMessage(conversation, message);
+      }
 
       return message;
     } catch (error) {
