@@ -9,7 +9,11 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { CreateUserDto, SearchUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto, UpdateUserDto } from './dto/update-user.dto';
@@ -74,5 +78,17 @@ export class UsersController {
   @Roles(UserRole.ADMIN, UserRole.USER)
   searchUserByEmail(@Query() dto: SearchUserDto) {
     return this.usersService.searchUserByEmail(dto.email);
+  }
+
+  @Patch('profile/me/avatar')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.ADMIN, UserRole.USER)
+  @UseInterceptors(FileInterceptor('avatar'))
+  updateAvatar(@Request() req, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const userId = req.user._id;
+    return this.usersService.updateAvatar(userId, file);
   }
 }

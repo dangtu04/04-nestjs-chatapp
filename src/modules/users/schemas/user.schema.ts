@@ -53,6 +53,11 @@ export class User {
   avatarUrl?: string;
 
   @Prop({
+    default: null,
+  })
+  avatarPublicId?: string;
+
+  @Prop({
     type: String,
     enum: UserRole,
     default: UserRole.USER,

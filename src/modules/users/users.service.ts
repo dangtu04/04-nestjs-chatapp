@@ -19,6 +19,7 @@ import { ResetPasswordAuthDto } from '@/auth/dto/update-auth.dto';
 import { ConfigService } from '@nestjs/config';
 import { AccountType } from '@/enum/user.enum';
 import { SendgridService } from '@/mail/sendgrid.service';
+import { CloudinaryService } from '@/modules/cloudinary/cloudinary.service';
 
 @Injectable()
 export class UsersService {
@@ -26,6 +27,7 @@ export class UsersService {
     @InjectModel(User.name) private userModel: Model<User>,
     private sendgridService: SendgridService,
     private configService: ConfigService,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   async isEmailExist(email: string) {
@@ -377,5 +379,39 @@ export class UsersService {
       }
       throw new InternalServerErrorException('Lỗi hệ thống.');
     }
+  }
+
+  async updateAvatar(userId: string, file: Express.Multer.File) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user id');
+    }
+
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    // Upload ảnh mới lên Cloudinary (xóa ảnh cũ nếu có publicId)
+    let avatarUrl: string;
+    if (user.avatarPublicId) {
+      const result = await this.cloudinaryService.replaceImage(
+        user.avatarPublicId,
+        file,
+        'avatars',
+      );
+      avatarUrl = result.secureUrl;
+      await this.userModel.findByIdAndUpdate(userId, {
+        avatarUrl: result.secureUrl,
+        avatarPublicId: result.publicId,
+      });
+    } else {
+      const result = await this.cloudinaryService.uploadImage(file, 'avatars');
+      avatarUrl = result.secureUrl;
+      await this.userModel.findByIdAndUpdate(userId, {
+        avatarUrl: result.secureUrl,
+        avatarPublicId: result.publicId,
+      });
+    }
+    return { avatarUrl };
   }
 }
