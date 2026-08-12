@@ -26,7 +26,7 @@ export class MembershipGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const userId: string = request.user?.userId ?? request.user?._id;
-    const conversationId = request.body?.[key];
+    const conversationId = request.query?.[key] ?? request.body?.[key];
 
     const conversation = await this.conversationModel.findById(conversationId);
     if (!conversation) {

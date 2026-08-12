@@ -32,7 +32,8 @@ export class FriendshipGuard implements CanActivate {
     };
     const request = context.switchToHttp().getRequest();
     const currentUserId: string = request.user?.userId ?? request.user?._id;
-    const target = request.body?.[options.bodyKey];
+    const target =
+      request.query?.[options.bodyKey] ?? request.body?.[options.bodyKey];
 
     // nếu bodyKey không là mảng
     if (!options.isArray) {

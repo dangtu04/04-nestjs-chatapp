@@ -1,3 +1,4 @@
+import { MessageType } from '@/enum/message.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -16,11 +17,24 @@ export class Message {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   senderId: Types.ObjectId;
 
+  @Prop({
+    type: String,
+    enum: MessageType,
+    default: MessageType.TEXT,
+  })
+  type: MessageType;
+
   @Prop({ type: String, trim: true })
-  content: string;
+  content?: string;
 
   @Prop({ type: String })
-  imgUrl: string;
+  imgUrl?: string;
+
+  @Prop({ type: String })
+  imgPublicId?: string;
+
+  @Prop({ type: Boolean, default: false })
+  isRecalled: boolean;
 
   createdAt: Date;
 }

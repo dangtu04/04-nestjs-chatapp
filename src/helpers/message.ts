@@ -6,6 +6,7 @@ export const updateConversationAfterCreateMessage = (
   conversation: ConversationDocument,
   message: MessageDocument,
   senderId: Types.ObjectId,
+  isImage?: boolean,
 ) => {
   conversation.set({
     seenBy: [],
@@ -13,7 +14,7 @@ export const updateConversationAfterCreateMessage = (
     lastMessage: {
       _id: message._id,
       senderId,
-      content: message.content,
+      content: isImage ? `[Hình ảnh]` : message.content,
       createdAt: message.createdAt,
     },
   });
