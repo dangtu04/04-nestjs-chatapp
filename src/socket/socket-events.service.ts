@@ -110,4 +110,28 @@ export class SocketEventsService {
       this.server.to(userId).emit('new-group', { conversation });
     });
   }
+
+  emitUserOnline(userId: string, recipientIds: string[]) {
+    for (const recipientId of recipientIds) {
+      const socketIds = this.onlineUsersService.getUserSocketIds(recipientId);
+
+      for (const socketId of socketIds) {
+        this.server.to(socketId).emit('online-user', {
+          userId,
+        });
+      }
+    }
+  }
+
+  emitUserOffline(userId: string, recipientIds: string[]) {
+    for (const recipientId of recipientIds) {
+      const socketIds = this.onlineUsersService.getUserSocketIds(recipientId);
+
+      for (const socketId of socketIds) {
+        this.server.to(socketId).emit('offline-user', {
+          userId,
+        });
+      }
+    }
+  }
 }

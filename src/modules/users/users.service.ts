@@ -20,6 +20,8 @@ import { ConfigService } from '@nestjs/config';
 import { AccountType } from '@/enum/user.enum';
 import { SendgridService } from '@/mail/sendgrid.service';
 import { CloudinaryService } from '@/modules/cloudinary/cloudinary.service';
+import { FriendService } from '@/modules/friend/friend.service';
+import { SocketEventsService } from '@/socket/socket-events.service';
 
 @Injectable()
 export class UsersService {
@@ -28,6 +30,8 @@ export class UsersService {
     private sendgridService: SendgridService,
     private configService: ConfigService,
     private cloudinaryService: CloudinaryService,
+    private readonly friendService: FriendService,
+    private readonly socketEventsService: SocketEventsService,
   ) {}
 
   async isEmailExist(email: string) {
@@ -92,7 +96,7 @@ export class UsersService {
     }
     const user = await this.userModel
       .findById(id)
-      .select('_id name email isActive avatarUrl');
+      .select('_id name email phone isActive avatarUrl bio showOnlineStatus');
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
@@ -321,13 +325,43 @@ export class UsersService {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid user id');
     }
+
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, dto, { new: true })
-      .select('-password');
+      .select('_id name email phone avatarUrl bio showOnlineStatus');
+
     if (!updatedUser) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    return updatedUser;
+
+    const changedFields: Record<string, any> = {};
+    for (const key of Object.keys(dto) as (keyof UpdateProfileDto)[]) {
+      if (dto[key] !== undefined) {
+        changedFields[key] = updatedUser[key as keyof typeof updatedUser];
+      }
+    }
+
+    if (dto.showOnlineStatus !== undefined) {
+      try {
+        const recipientIds = await this.friendService.getFriendIds(id);
+
+        if (dto.showOnlineStatus) {
+          this.socketEventsService.emitUserOnline(id, recipientIds);
+        } else {
+          this.socketEventsService.emitUserOffline(id, recipientIds);
+        }
+      } catch (error) {
+        console.error('Error when updating user online status:', error);
+        if (error instanceof HttpException) {
+          throw error;
+        }
+        throw new InternalServerErrorException(
+          'Lỗi hệ thống khi cập nhật trạng thái online.',
+        );
+      }
+    }
+
+    return changedFields;
   }
 
   async findOrCreateGoogleUser(data: {
@@ -413,5 +447,17 @@ export class UsersService {
       });
     }
     return { avatarUrl };
+  }
+
+  async getVisibleOnlineUserIds(onlineUserIds: string[]): Promise<string[]> {
+    const users = await this.userModel
+      .find({
+        _id: { $in: onlineUserIds },
+        showOnlineStatus: true,
+      })
+      .select('_id')
+      .lean();
+
+    return users.map((user) => user._id.toString());
   }
 }

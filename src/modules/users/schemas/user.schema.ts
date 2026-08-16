@@ -91,6 +91,15 @@ export class User {
     default: null,
   })
   codeExpired?: Date;
+
+  @Prop({
+    default: null,
+    trim: true,
+  })
+  bio?: string;
+
+  @Prop({ default: true })
+  showOnlineStatus: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

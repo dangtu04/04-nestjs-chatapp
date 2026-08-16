@@ -20,5 +20,6 @@ import { FriendshipGuard } from '../message/guard/friendship.guard';
   ],
   controllers: [FriendController],
   providers: [FriendService, FriendshipGuard],
+  exports: [FriendService],
 })
 export class FriendModule {}

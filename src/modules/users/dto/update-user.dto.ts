@@ -67,4 +67,11 @@ export class UpdateProfileDto {
   @ValidateNested()
   @Type(() => AddressDto)
   address?: AddressDto;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @IsOptional()
+  showOnlineStatus?: boolean;
 }

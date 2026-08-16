@@ -5,12 +5,16 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
 import { MailModule } from '@/mail/mail.module';
 import { CloudinaryModule } from '@/modules/cloudinary/cloudinary.module';
+import { FriendModule } from '@/modules/friend/friend.module';
+import { SocketModule } from '@/socket/socket.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MailModule,
     CloudinaryModule,
+    FriendModule,
+    SocketModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

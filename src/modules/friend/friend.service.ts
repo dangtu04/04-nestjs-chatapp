@@ -186,4 +186,27 @@ export class FriendService {
       throw new InternalServerErrorException('Lỗi hệ thống.');
     }
   }
+
+  // lấy danh sách _id của bạn bè
+  async getFriendIds(userId: string): Promise<string[]> {
+    try {
+      const friendships = await this.friendModel
+        .find({
+          $or: [
+            { userA: new Types.ObjectId(userId) },
+            { userB: new Types.ObjectId(userId) },
+          ],
+        })
+        .select('userA userB')
+        .lean();
+
+      return friendships.map((friend) => {
+        const userAStr = friend.userA.toString();
+        return userAStr === userId ? friend.userB.toString() : userAStr;
+      });
+    } catch (error) {
+      console.error('Error retrieving friend list:', error);
+      throw new InternalServerErrorException('Lỗi hệ thống.');
+    }
+  }
 }

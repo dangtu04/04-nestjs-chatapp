@@ -11,6 +11,7 @@ import { SocketWithAuth } from './interfaces/socket-with-auth.interface';
 import { OnlineUsersService } from './online-users.service';
 import { SocketEventsService } from './socket-events.service';
 import { ConversationService } from '@/modules/conversation/conversation.service';
+import { UsersService } from '@/modules/users/users.service';
 
 @WebSocketGateway({
   cors: {
@@ -28,6 +29,7 @@ export class ChatGateway
     private readonly onlineUsersService: OnlineUsersService,
     private readonly socketEventsService: SocketEventsService,
     private readonly conversationService: ConversationService,
+    private readonly userService: UsersService,
   ) {}
   afterInit(server: Server) {
     this.socketEventsService.setServer(server);
@@ -49,20 +51,24 @@ export class ChatGateway
     client.join(user._id.toString());
 
     this.onlineUsersService.addUserSocket(user._id, client.id);
-    // console.log(this.onlineUsersService.getOnlineUserIds());
-    this.server.emit(
-      'online-users',
-      this.onlineUsersService.getOnlineUserIds(),
-    );
-    // console.log(`>>>>>>> ${client.user.email} - online with id: ${client.id}`);
+
+    const onlineUserIds = this.onlineUsersService.getOnlineUserIds();
+
+    // lọc ra các user cho phép hiện trạng thái hoạt động
+    const visibleOnlineUserIds =
+      await this.userService.getVisibleOnlineUserIds(onlineUserIds);
+
+    this.server.emit('online-users', visibleOnlineUserIds);
   }
 
-  handleDisconnect(client: SocketWithAuth) {
+  async handleDisconnect(client: SocketWithAuth) {
     this.onlineUsersService.removeUserSocket(client.user._id, client.id);
-    this.server.emit(
-      'online-users',
-      this.onlineUsersService.getOnlineUserIds(),
-    );
-    // console.log('>>>>>>> Disconnected');
+
+    const onlineUserIds = this.onlineUsersService.getOnlineUserIds();
+
+    const visibleOnlineUserIds =
+      await this.userService.getVisibleOnlineUserIds(onlineUserIds);
+
+    this.server.emit('online-users', visibleOnlineUserIds);
   }
 }
